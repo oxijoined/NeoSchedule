@@ -1,0 +1,6 @@
+version: 2
+updates:
+  - package-ecosystem: "pip" # для Python
+    directory: "/" # Директория, где находится requirements.txt
+    schedule:
+      interval: "weekly" # Запускать обновления еженедельно
