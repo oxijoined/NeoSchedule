@@ -1,0 +1,6 @@
+.env
+modules/*/*.cpython-311.pyc
+/.venv
+/.vscode
+schedule2.xlsx
+/chats
