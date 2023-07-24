@@ -1,8 +1,9 @@
+import os
+from io import BytesIO
+
 import pandas as pd
 import requests
-from io import BytesIO
 from dotenv import load_dotenv
-import os
 
 load_dotenv()
 
@@ -15,9 +16,6 @@ def is_schedule(df):
     return "№ урока" in df.values.astype(str).flatten().tolist()
 
 
-import pandas as pd
-import requests
-from io import BytesIO
 
 def get_schedule():
     xls = load_schedule()
