@@ -1,18 +1,23 @@
 # Импорт необходимых модулей
+import logging
 import os
+
 import telebot
 from dotenv import load_dotenv
-from telebot.util import quick_markup
-from modules.xlsx_parse import get_schedule
-from modules.days import dayNames, lessonTime, dayEmojis
 from pysondb import getDb
-import asyncio
+from telebot.util import quick_markup
+
+from modules.days import dayEmojis, dayNames, lessonTime
+from modules.xlsx_parse import get_schedule
 
 # Загрузка переменных окружения из файла .env
 load_dotenv()
 
 # Получение BOT_TOKEN из переменных окружения
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+# Настройка логгирования
+logging.basicConfig(filename="bot.log", level=logging.DEBUG)
 
 # Инициализация экземпляра TeleBot
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
@@ -40,11 +45,8 @@ def send_private_schedule(message: telebot.types.Message):
 
 # Функция для проверки того, является ли пользователь администратором чата
 def is_chat_admin(chat_id):
-    ids = []
     admins = bot.get_chat_administrators(chat_id=chat_id)
-    for admin in admins:
-        ids.append(admin.user.id)
-    return ids
+    return [admin.user.id for admin in admins]
 
 
 # Функция форматирования расписания для заданной группы и дня
@@ -69,14 +71,14 @@ def choose_day(call: telebot.types.CallbackQuery):
     day = int(call.data.split("|")[1])
     group = call.data.split("|")[2]
     markup = days_markup(group, day)
-    msg = format_schedule(group, int(day))
+    msg = format_schedule(group, day)
     try:
         bot.edit_message_text(
             msg, call.from_user.id, call.message.id, reply_markup=markup
         )
         bot.answer_callback_query(call.id, text=f"{group} | {dayNames[day]}")
     except telebot.apihelper.ApiTelegramException:
-        bot.answer_callback_query(call.id, text=f"Ничего не изменилось")
+        bot.answer_callback_query(call.id, text="Ничего не изменилось")
 
 
 # Обработчик события добавления бота в новый чат
@@ -104,7 +106,7 @@ def back_handler(call: telebot.types.CallbackQuery):
             row_width=4,
         ),
     )
-    bot.answer_callback_query(call.id, text=f"◀️ Возвращаемся обратно")
+    bot.answer_callback_query(call.id, text="◀️ Возвращаемся обратно")
 
 
 # Обработчик коллбека для выбора группы
@@ -142,7 +144,7 @@ def days_markup(group, day):
             "✅ Пятница"
             if day == 4
             else "Пятница": {"callback_data": f"choose_day|4|{group}"},
-            "◀️": {"callback_data": f"back"},
+            "◀️": {"callback_data": "back"},
         },
         row_width=5,
     )
@@ -204,11 +206,11 @@ def add_new(call: telebot.types.CallbackQuery):
 
     def process_name(message: telebot.types.Message):
         name = message.text
-        id = chat_db.add({"name": name, "order": 0, "group": None, "duties": 0})
+        id_ = chat_db.add({"name": name, "order": 0, "group": None, "duties": 0})
         markup = quick_markup(
             {
-                "1": {"callback_data": f"student_set|{id}|1"},
-                "2": {"callback_data": f"student_set|{id}|2"},
+                "1": {"callback_data": f"student_set|{id_}|1"},
+                "2": {"callback_data": f"student_set|{id_}|2"},
             }
         )
         bot.reply_to(
@@ -223,10 +225,7 @@ def add_new(call: telebot.types.CallbackQuery):
 
 # Функция для проверки, является ли строка целым числом
 def is_integer(s):
-    if s.startswith("-"):
-        return s[1:].isdigit()
-    else:
-        return s.isdigit()
+    return s[1:].isdigit() if s.startswith("-") else s.isdigit()
 
 
 # Обработчик для редактирования числа дежурств студента через коллбэк
@@ -431,12 +430,8 @@ def get_new_students(database, list_of_students, index_to_replace, group):
     if group != 0:
         # Фильтруем студентов по указанной группе
         data = [student for student in data if student["group"] == group]
-        # Сортируем студентов по значению 'order'
-        sorted_students = sorted(data, key=lambda student: student["order"])
-    else:
-        # Если group равен 0, работаем со всеми студентами
-        sorted_students = sorted(data, key=lambda student: student["order"])
-
+    # Сортируем студентов по значению 'order'
+    sorted_students = sorted(data, key=lambda student: student["order"])
     id_for_replace = list_of_students[index_to_replace]
     second_student_id = (
         list_of_students[1] if index_to_replace == 0 else list_of_students[0]
@@ -543,11 +538,9 @@ def reroll(call: telebot.types.CallbackQuery):
 
 def chat_processer(message: telebot.types.Message):
     bot_id = bot.get_me().id
-    isAdmin = False
-    for item in bot.get_chat_administrators(message.chat.id):
-        if item.user.id == bot_id:
-            isAdmin = True
-            break
+    isAdmin = any(
+        item.user.id == bot_id for item in bot.get_chat_administrators(message.chat.id)
+    )
     if isAdmin:
         chat_db = getDb(f"chats/{message.chat.id}.json")
         markup = quick_markup(
@@ -584,7 +577,7 @@ def log(message: telebot.types.Message):
 @bot.message_handler(commands=["start"])
 def start_handler(message: telebot.types.Message):
     print(message.chat.type)
-    if message.chat.type == "supergroup" or message.chat.type == "group":
+    if message.chat.type in ["supergroup", "group"]:
         return chat_processer(message)
     elif message.chat.type == "private":
         return send_private_schedule(message)

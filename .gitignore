@@ -4,3 +4,4 @@ modules/*/*.cpython-311.pyc
 /.vscode
 schedule2.xlsx
 /chats
+/bot.log
