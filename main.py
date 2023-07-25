@@ -20,7 +20,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 logging.basicConfig(filename="bot.log", level=logging.DEBUG)
 
 # Инициализация экземпляра TeleBot
-bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
+bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML", threaded=True, num_threads=16)
 
 # Создайте каталог "chats", если он не существует
 if not os.path.exists("chats"):
