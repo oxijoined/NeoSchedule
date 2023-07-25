@@ -27,9 +27,9 @@ if not os.path.exists("chats"):
     os.makedirs("chats")
 
 
-# Function to send the private schedule
+# Функция отправки расписания
 def send_private_schedule(message: telebot.types.Message):
-    groups = get_schedule().keys()
+    groups = sorted([str(key) for key in get_schedule().keys() if str(key) != 'nan'])
     bot.reply_to(
         message,
         "Выберите группу:\n\nТакже вы можете добавить этого бота в чат и использовать его для учета и выбора дежурных студентов",
@@ -96,7 +96,7 @@ def added_to_chat(message: telebot.types.Message):
 # Обработчик обратного вызова для возврата к выбору группы
 @bot.callback_query_handler(func=lambda call: call.data.split("|")[0] == "back")
 def back_handler(call: telebot.types.CallbackQuery):
-    groups = get_schedule().keys()
+    groups = sorted([str(key) for key in get_schedule().keys() if str(key) != 'nan'])
     bot.edit_message_text(
         text="Выберите группу:",
         chat_id=call.from_user.id,
@@ -121,10 +121,10 @@ def change_group(call: telebot.types.CallbackQuery):
     try:
         msg = format_schedule(group, 0)
         bot.edit_message_text(
-        text=msg,
-        chat_id=call.from_user.id,
-        message_id=call.message.id,
-        reply_markup=markup,
+            text=msg,
+            chat_id=call.from_user.id,
+            message_id=call.message.id,
+            reply_markup=markup,
         )
         bot.answer_callback_query(call.id, text=f"{group}")
     except Exception:
@@ -192,13 +192,6 @@ def student_set(call: telebot.types.CallbackQuery):
     chat_db = getDb(f"chats/{call.message.chat.id}.json")
     chat_db.updateByQuery(
         {"id": int(student_id)}, {"id": int(student_id), "group": int(group)}
-    )
-    markup = quick_markup(
-        {
-            "➕ Добавить еще": {"callback_data": "add_new"},
-            "◀️ Назад": {"callback_data": "edit"},
-        },
-        row_width=1,
     )
     return edit(call)
 

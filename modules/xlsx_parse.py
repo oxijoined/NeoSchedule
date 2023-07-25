@@ -7,16 +7,36 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+CACHE = {}
 
 url1 = os.getenv("SCHEDULE1")
 url2 = os.getenv("SCHEDULE2")
 url3 = os.getenv("SCHEDULE3")
 
 
+def load_schedule(url):
+    etag = CACHE.get(url, {}).get("etag")
+    headers = {"If-None-Match": etag} if etag else {}
+    response = requests.get(url, headers=headers)
+
+    # Если данные не изменились, возвращаем сохраненный DataFrame
+    if response.status_code == 304:
+        print("CACHED")
+        return CACHE[url]["data"]
+
+    # Иначе обновляем кэш и возвращаем новые данные
+    CACHE[url] = {
+        "etag": response.headers.get("ETag"),
+        "data": pd.read_excel(BytesIO(response.content), sheet_name=None),
+    }
+    print("NEW")
+    return CACHE[url]["data"]
+
 
 def is_schedule(df):
     # Проверка, является ли страница страницей с расписанием
     return "№ урока" in df.values.astype(str).flatten().tolist()
+
 
 def merge_schedules(*schedules):
     # Объединяем все расписания в одно
@@ -44,10 +64,6 @@ def get_schedule():
     return merge_schedules(schedule1, schedule2, schedule3)
 
 
-def load_schedule(url):
-    response = requests.get(url)
-    return pd.read_excel(BytesIO(response.content), sheet_name=None)
-
 def parse_schedule(xls):
     schedule = {}
     for sheet_name, df in xls.items():
@@ -57,6 +73,7 @@ def parse_schedule(xls):
         for i, group in enumerate(groups):
             schedule = parse_group_schedule(df, i, group, schedule)
     return schedule
+
 
 def parse_group_schedule(df, i, group, schedule):
     day = None
@@ -69,8 +86,11 @@ def parse_group_schedule(df, i, group, schedule):
             continue
         if lesson_data := get_lesson_data(row, i):
             lesson_num, discipline, teacher, room = lesson_data
-            schedule = update_schedule(group, day, lesson_num, discipline, teacher, room, schedule)
+            schedule = update_schedule(
+                group, day, lesson_num, discipline, teacher, room, schedule
+            )
     return reorder_schedule(group, schedule)
+
 
 def get_lesson_data(row, i):
     lesson_num = row["Unnamed: 2"]
@@ -95,11 +115,11 @@ def update_schedule(group, day, lesson_num, discipline, teacher, room, schedule)
     }
     return schedule
 
+
 def reorder_schedule(group, schedule):
     for group, value in schedule.items():
         new_schedule = {
-            idx: schedule[group][date_str]
-            for idx, date_str in enumerate(value.keys())
+            idx: schedule[group][date_str] for idx, date_str in enumerate(value.keys())
         }
         schedule[group] = new_schedule
     return schedule
