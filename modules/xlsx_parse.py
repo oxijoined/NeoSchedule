@@ -10,6 +10,7 @@ load_dotenv()
 
 url1 = os.getenv("SCHEDULE1")
 url2 = os.getenv("SCHEDULE2")
+url3 = os.getenv("SCHEDULE3")
 
 
 
@@ -17,26 +18,31 @@ def is_schedule(df):
     # Проверка, является ли страница страницей с расписанием
     return "№ урока" in df.values.astype(str).flatten().tolist()
 
-def merge_schedules(schedule1, schedule2):
-    # Объединяем два расписания в одно
-    merged_schedule = schedule1.copy()
-    for group, days in schedule2.items():
-        if group not in merged_schedule:
-            merged_schedule[group] = days
-        else:
-            for day, lessons in days.items():
-                if day not in merged_schedule[group]:
-                    merged_schedule[group][day] = lessons
-                else:
-                    merged_schedule[group][day].update(lessons)
+def merge_schedules(*schedules):
+    # Объединяем все расписания в одно
+    merged_schedule = schedules[0].copy()
+    for schedule in schedules[1:]:
+        for group, days in schedule.items():
+            if group not in merged_schedule:
+                merged_schedule[group] = days
+            else:
+                for day, lessons in days.items():
+                    if day not in merged_schedule[group]:
+                        merged_schedule[group][day] = lessons
+                    else:
+                        merged_schedule[group][day].update(lessons)
     return merged_schedule
+
 
 def get_schedule():
     xls1 = load_schedule(url1)
     xls2 = load_schedule(url2)
+    xls3 = load_schedule(url3)
     schedule1 = parse_schedule(xls1)
     schedule2 = parse_schedule(xls2)
-    return merge_schedules(schedule1, schedule2)
+    schedule3 = parse_schedule(xls3)
+    return merge_schedules(schedule1, schedule2, schedule3)
+
 
 def load_schedule(url):
     response = requests.get(url)
