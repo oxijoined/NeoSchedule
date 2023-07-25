@@ -71,7 +71,10 @@ def choose_day(call: telebot.types.CallbackQuery):
     day = int(call.data.split("|")[1])
     group = call.data.split("|")[2]
     markup = days_markup(group, day)
-    msg = format_schedule(group, day)
+    try:
+        msg = format_schedule(group, day)
+    except Exception:
+        bot.answer_callback_query(call.id, "⚠️ Произошла ошибка")
     try:
         bot.edit_message_text(
             msg, call.from_user.id, call.message.id, reply_markup=markup
@@ -115,14 +118,17 @@ def change_group(call: telebot.types.CallbackQuery):
     group = call.data.split("|")[1]
     day = 0
     markup = days_markup(group, day)
-    msg = format_schedule(group, 0)
-    bot.edit_message_text(
+    try:
+        msg = format_schedule(group, 0)
+        bot.edit_message_text(
         text=msg,
         chat_id=call.from_user.id,
         message_id=call.message.id,
         reply_markup=markup,
-    )
-    bot.answer_callback_query(call.id, text=f"{group}")
+        )
+        bot.answer_callback_query(call.id, text=f"{group}")
+    except Exception:
+        return bot.answer_callback_query(call.id, "⚠️ Произошла ошибка")
 
 
 # Функция для создания разметки с кнопками выбора дней недели

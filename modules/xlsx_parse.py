@@ -8,20 +8,37 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-url = os.getenv("SCHEDULE_FILE_LINK")
+url1 = os.getenv("SCHEDULE1")
+url2 = os.getenv("SCHEDULE2")
+
 
 
 def is_schedule(df):
     # Проверка, является ли страница страницей с расписанием
     return "№ урока" in df.values.astype(str).flatten().tolist()
 
-
+def merge_schedules(schedule1, schedule2):
+    # Объединяем два расписания в одно
+    merged_schedule = schedule1.copy()
+    for group, days in schedule2.items():
+        if group not in merged_schedule:
+            merged_schedule[group] = days
+        else:
+            for day, lessons in days.items():
+                if day not in merged_schedule[group]:
+                    merged_schedule[group][day] = lessons
+                else:
+                    merged_schedule[group][day].update(lessons)
+    return merged_schedule
 
 def get_schedule():
-    xls = load_schedule()
-    return parse_schedule(xls)
+    xls1 = load_schedule(url1)
+    xls2 = load_schedule(url2)
+    schedule1 = parse_schedule(xls1)
+    schedule2 = parse_schedule(xls2)
+    return merge_schedules(schedule1, schedule2)
 
-def load_schedule():
+def load_schedule(url):
     response = requests.get(url)
     return pd.read_excel(BytesIO(response.content), sheet_name=None)
 
@@ -53,11 +70,12 @@ def get_lesson_data(row, i):
     lesson_num = row["Unnamed: 2"]
     if "пара" in str(lesson_num).lower():
         lesson_num = str(lesson_num).replace("пара", "")
-    discipline = row.iloc[3 + i * 3]
-    teacher = row.iloc[4 + i * 3]
-    room = row.iloc[5 + i * 3]
+    discipline = row.iloc[3 + i * 3] if 3 + i * 3 < len(row) else None
+    teacher = row.iloc[4 + i * 3] if 4 + i * 3 < len(row) else None
+    room = row.iloc[5 + i * 3] if 5 + i * 3 < len(row) else None
     if pd.notna(lesson_num) and pd.notna(discipline):
         return lesson_num, discipline, teacher, room
+
 
 def update_schedule(group, day, lesson_num, discipline, teacher, room, schedule):
     if group not in schedule:
