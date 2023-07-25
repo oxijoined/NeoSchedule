@@ -82,6 +82,8 @@ def choose_day(call: telebot.types.CallbackQuery):
         bot.answer_callback_query(call.id, text=f"{group} | {dayNames[day]}")
     except telebot.apihelper.ApiTelegramException:
         bot.answer_callback_query(call.id, text="Ничего не изменилось")
+    except UnboundLocalError:
+        bot.answer_callback_query(call.id, "⚠️ Произошла ошибка")
 
 
 # Обработчик события добавления бота в новый чат
