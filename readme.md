@@ -1,4 +1,6 @@
-![Alt text](<Group 14 (2).png>)
+<p align="center">
+  <img src="https://github.com/oxijoined/NeoSchedule/blob/main/Group%2014%20(2).png" />
+</p>
 
 # Описание
 Бот предназначен для удобного просмотра расписания и организации дежурств студентов в учебных группах.
