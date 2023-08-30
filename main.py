@@ -543,15 +543,14 @@ def chat_processer(message: telebot.types.Message):
         item.user.id == bot_id for item in bot.get_chat_administrators(message.chat.id)
     )
 
-    isUserAdmin = any(
-        item.user.id == message.from_user.id
-        for item in bot.get_chat_administrators(message.chat.id)
-    )
-
-    if not isUserAdmin:
-        return log(message)
-
     if isAdmin:
+        isUserAdmin = any(
+            item.user.id == message.from_user.id
+            for item in bot.get_chat_administrators(message.chat.id)
+        )
+
+        if not isUserAdmin:
+            return log(message)
         chat_db = getDb(f"chats/{message.chat.id}.json")
         markup = quick_markup(
             {
