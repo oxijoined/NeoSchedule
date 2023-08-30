@@ -29,7 +29,7 @@ if not os.path.exists("chats"):
 
 # Функция отправки расписания
 def send_private_schedule(message: telebot.types.Message):
-    groups = sorted([str(key) for key in get_schedule().keys() if str(key) != 'nan'])
+    groups = sorted([str(key) for key in get_schedule().keys() if str(key) != "nan"])
     bot.reply_to(
         message,
         "Выберите группу:\n\nТакже вы можете добавить этого бота в чат и использовать его для учета и выбора дежурных студентов",
@@ -98,7 +98,7 @@ def added_to_chat(message: telebot.types.Message):
 # Обработчик обратного вызова для возврата к выбору группы
 @bot.callback_query_handler(func=lambda call: call.data.split("|")[0] == "back")
 def back_handler(call: telebot.types.CallbackQuery):
-    groups = sorted([str(key) for key in get_schedule().keys() if str(key) != 'nan'])
+    groups = sorted([str(key) for key in get_schedule().keys() if str(key) != "nan"])
     bot.edit_message_text(
         text="Выберите группу:",
         chat_id=call.from_user.id,
@@ -542,6 +542,15 @@ def chat_processer(message: telebot.types.Message):
     isAdmin = any(
         item.user.id == bot_id for item in bot.get_chat_administrators(message.chat.id)
     )
+
+    isUserAdmin = any(
+        item.user.id == message.from_user.id
+        for item in bot.get_chat_administrators(message.chat.id)
+    )
+
+    if not isUserAdmin:
+        return log(message)
+
     if isAdmin:
         chat_db = getDb(f"chats/{message.chat.id}.json")
         markup = quick_markup(
@@ -552,9 +561,7 @@ def chat_processer(message: telebot.types.Message):
                 "✏️ Редактировать группу": {"callback_data": "edit"},
             }
         )
-        bot.reply_to(
-            message, "Бот готов к работе, доп. информация - /faq", reply_markup=markup
-        )
+        bot.reply_to(message, "Бот готов к работе", reply_markup=markup)
     else:
         bot.reply_to(
             message,
@@ -562,6 +569,7 @@ def chat_processer(message: telebot.types.Message):
         )
 
 
+@bot.message_handler(commands=["list"])
 @bot.message_handler(commands=["log"])
 def log(message: telebot.types.Message):
     chat_db = getDb(f"chats/{message.chat.id}.json")
