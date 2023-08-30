@@ -5,3 +5,4 @@ modules/*/*.cpython-311.pyc
 schedule2.xlsx
 /chats
 /bot.log
+/venv

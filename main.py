@@ -321,6 +321,7 @@ def edit_group(call: telebot.types.CallbackQuery):
 @bot.callback_query_handler(func=lambda call: call.data.split("|")[0] == "edit")
 def edit(call: telebot.types.CallbackQuery):
     page_number = int(call.data.split("|")[1]) if "|" in call.data else 1
+    page_number = 1 if page_number > 10 else page_number
 
     if call.from_user.id not in is_chat_admin(call.message.chat.id):
         return bot.answer_callback_query(call.id, "Вы не администратор 😄")
