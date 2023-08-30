@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/oxijoined/NeoSchedule/blob/main/Group%2014%20(2).png" />
+  <img src="https://github.com/oxijoined/NeoSchedule/blob/main/image.png" />
 </p>
 
 # Описание
