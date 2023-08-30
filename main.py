@@ -15,6 +15,7 @@ load_dotenv()
 
 # Получение BOT_TOKEN из переменных окружения
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+PAGE_SIZE = 10  # Количество студентов на одной странице
 
 # Настройка логгирования
 logging.basicConfig(filename="bot.log", level=logging.DEBUG)
@@ -319,27 +320,30 @@ def edit_group(call: telebot.types.CallbackQuery):
 # Обработчик для редактирования списка студентов через коллбэк
 @bot.callback_query_handler(func=lambda call: call.data.split("|")[0] == "edit")
 def edit(call: telebot.types.CallbackQuery):
+    page_number = int(call.data.split("|")[1]) if "|" in call.data else 1
+
     if call.from_user.id not in is_chat_admin(call.message.chat.id):
         return bot.answer_callback_query(call.id, "Вы не администратор 😄")
+
     chat_db = getDb(f"chats/{call.message.chat.id}.json")
-    markup = quick_markup({"➕ Добавить нового студента": {"callback_data": "add_new"}})
+
+    markup = telebot.types.InlineKeyboardMarkup()
+    markup.row_width = 4
+
     if chat_db.getAll() == []:
-        bot.edit_message_text(
-            "Список студентов пуст",
-            call.message.chat.id,
-            call.message.id,
-            reply_markup=markup,
-        )
+        markup.add(telebot.types.InlineKeyboardButton("➕ Добавить нового студента", callback_data="add_new"))
+        bot.edit_message_text("Список студентов пуст", call.message.chat.id, call.message.id, reply_markup=markup)
     else:
-        markup = telebot.types.InlineKeyboardMarkup()
-        markup.row_width = 4
         markup.add(
             telebot.types.InlineKeyboardButton("Имя", callback_data="NONE"),
             telebot.types.InlineKeyboardButton("Группа", callback_data="NONE"),
             telebot.types.InlineKeyboardButton("Дежурства", callback_data="NONE"),
             telebot.types.InlineKeyboardButton("Удаление", callback_data="NONE"),
         )
-        for student in chat_db.getAll():
+        
+        start_idx = (page_number - 1) * PAGE_SIZE
+        end_idx = start_idx + PAGE_SIZE
+        for student in chat_db.getAll()[start_idx:end_idx]:
             markup.add(
                 telebot.types.InlineKeyboardButton(
                     student["name"], callback_data=f"edit_name|{student['id']}"
@@ -354,17 +358,23 @@ def edit(call: telebot.types.CallbackQuery):
                     "❌", callback_data=f"delete_student|{student['id']}"
                 ),
             )
-        markup.add(
-            telebot.types.InlineKeyboardButton(
-                "➕ Добавить нового студента", callback_data="add_new"
+        # Добавляем кнопки для навигации по страницам
+        navigation_buttons = []
+        if page_number > 1:
+            navigation_buttons.append(
+                telebot.types.InlineKeyboardButton("⬅️ Предыдущая", callback_data=f"edit|{page_number - 1}")
             )
-        )
-        bot.edit_message_text(
-            "Список студентов:",
-            call.message.chat.id,
-            call.message.id,
-            reply_markup=markup,
-        )
+        if end_idx < len(chat_db.getAll()):
+            navigation_buttons.append(
+                telebot.types.InlineKeyboardButton("➡️ Следующая", callback_data=f"edit|{page_number + 1}")
+            )
+        if navigation_buttons:
+            markup.row(*navigation_buttons)
+
+        markup.add(telebot.types.InlineKeyboardButton("➕ Добавить нового студента", callback_data="add_new"))
+
+        bot.edit_message_text("Список студентов:", call.message.chat.id, call.message.id, reply_markup=markup)
+
 
 
 # Обработчик для выбора дежурных студентов через коллбэк
