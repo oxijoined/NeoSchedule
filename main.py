@@ -587,9 +587,9 @@ def chat_processer(message: telebot.types.Message):
         markup = quick_markup(
             {
                 "Общая": {"callback_data": "choose|0"},
+                "✏️ Редактировать группу": {"callback_data": "edit"},
                 "1 подгруппа": {"callback_data": "choose|1"},
                 "2 подгруппа": {"callback_data": "choose|2"},
-                "✏️ Редактировать группу": {"callback_data": "edit"},
             }
         )
         bot.reply_to(message, "Бот готов к работе", reply_markup=markup)
