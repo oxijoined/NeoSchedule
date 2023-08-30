@@ -3,4 +3,4 @@ updates:
   - package-ecosystem: "pip" # для Python
     directory: "/" # Директория, где находится requirements.txt
     schedule:
-      interval: "weekly" # Запускать обновления еженедельно
+      interval: "daily" # Запускать обновления еженедельно
