@@ -62,7 +62,7 @@ def format_schedule(group, day):
             discipline = data["discipline"]
             teacher = data["teacher"]
             room = data["room"]
-            msg += f"<pre>\t\t{dayEmojis[int(lesson)]}: {discipline}\n\t\t\t\t\t\t\t{room}\n\t\t\t\t\t\t\t{lessonTime[int(lesson)] if teacher != ' ' else ''}</pre>\n\n\n"
+            msg += f"<pre>\t\t{dayEmojis[int(lesson)]}: {discipline}\n\t\t\t\t\t\t\t{room}\n\t\t\t\t\t\t\t{lessonTime[int(lesson)] if teacher != ' ' else ''}\n\t\t\t\t\t\t\t{teacher}</pre>\n\n\n"
     return msg
 
 
